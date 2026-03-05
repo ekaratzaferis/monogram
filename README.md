@@ -119,14 +119,14 @@ right/  A.svg … Z.svg   a.svg … z.svg
 ### Installation
 
 ```bash
-npm install monogram
+npm install svg-monogram-maker
 ```
 
 ### Quick start — Node.js
 
 ```js
 import { readFileSync } from 'fs';
-import { parseFontSvg, createFont } from 'monogram';
+import { parseFontSvg, createFont } from 'svg-monogram-maker';
 
 const font = createFont(parseFontSvg(readFileSync('MyFont.svg', 'utf-8')));
 

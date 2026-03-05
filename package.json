@@ -1,5 +1,5 @@
 {
-  "name": "monogram",
+  "name": "svg-monogram-maker",
   "version": "1.0.0",
   "description": "Render multi-variant SVG monogram fonts as SVG strings with per-character variant cycling.",
   "type": "module",
