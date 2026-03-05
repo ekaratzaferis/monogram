@@ -1,11 +1,11 @@
 {
-  "name": "svgs-to-font",
+  "name": "monogram",
   "version": "1.0.0",
-  "description": "Render multi-variant SVG symbol fonts as SVG strings with per-character variant cycling.",
+  "description": "Render multi-variant SVG monogram fonts as SVG strings with per-character variant cycling.",
   "type": "module",
   "main": "index.js",
   "exports": { ".": "./index.js" },
-  "keywords": ["svg", "font", "symbol", "typographic", "variant"],
+  "keywords": ["svg", "monogram", "font", "symbol", "typographic", "variant"],
   "license": "MIT",
   "files": ["index.js", "README.md"],
   "engines": { "node": ">=18.0.0" }

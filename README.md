@@ -1,6 +1,6 @@
-# svgs-to-font
+# Monogram
 
-Combines per-letter SVGs into a single SVG symbol file and generates a demo page.
+Build multi-variant SVG monogram fonts from per-letter SVGs and render them as scalable SVG strings.
 
 ## Setup (macOS)
 
@@ -41,7 +41,7 @@ python3 svgs.py <FontName> '<config>' [--font <path>]
 
 ## Case 1 — SVGs already in directories
 
-Prepare one directory per variant, each containing 26 SVGs named `A.svg` … `Z.svg`:
+Prepare one directory per variant, each containing SVGs named `A.svg` … `Z.svg` (and optionally `a.svg` … `z.svg`):
 
 ```
 left/   A.svg  B.svg  … Z.svg
@@ -58,7 +58,7 @@ python3 svgs.py MyFont '{"left": {"scale_mod": 1.0, "tx": 0, "ty": 0}, "right": 
 
 ## Case 2 — Start from a font file
 
-Provide a TTF or OTF file with `--font`. The script will extract the 26 capital letters as SVGs and populate the config directories automatically before continuing.
+Provide a TTF or OTF file with `--font`. The script will extract the letters as SVGs and populate the config directories automatically before continuing.
 
 ```bash
 python3 svgs.py MyFont '{"left": {"scale_mod": 0.5, "tx": -20, "ty": 0}, "right": {"scale_mod": 0.5, "tx": 20, "ty": 0}}' --font /path/to/source.ttf
@@ -97,4 +97,79 @@ Transformations are applied **after** the glyph is fitted and centered inside th
 
 ## Demo page
 
-Open `demo.html` in a browser. Type letters in the input field — every N letters (where N = number of directories) form one stacked column, cycling through the directories in order.
+Open `demo.html` in a browser. Type letters in the input field — every N letters (where N = number of directories) form one stacked monogram unit, cycling through the directories in order.
+
+---
+
+## Lowercase Letter Support
+
+To enable lowercase rendering, add `a.svg` – `z.svg` alongside `A.svg` – `Z.svg` in each directory. `svgs.py` processes both cases automatically; missing files are warned and skipped.
+
+```
+left/   A.svg … Z.svg   a.svg … z.svg
+right/  A.svg … Z.svg   a.svg … z.svg
+```
+
+---
+
+## JavaScript Library
+
+`index.js` is a zero-dependency ES module that takes the generated combined SVG and renders text as a self-contained SVG string.
+
+### Installation
+
+```bash
+npm install monogram
+```
+
+### Quick start — Node.js
+
+```js
+import { readFileSync } from 'fs';
+import { parseFontSvg, createFont } from 'monogram';
+
+const font = createFont(parseFontSvg(readFileSync('MyFont.svg', 'utf-8')));
+
+console.log(font.render('Hello World'));
+```
+
+### Quick start — Browser
+
+```html
+<script type="module">
+  import { parseFontSvg, createFont } from './index.js';
+
+  const res = await fetch('MyFont.svg');
+  const font = createFont(parseFontSvg(await res.text()));
+
+  document.getElementById('output').innerHTML = font.render('Hello', { size: 120 });
+</script>
+```
+
+### API
+
+#### `parseFontSvg(svgString)` → `FontData`
+
+Parses the combined font SVG produced by `svgs.py`. Detects the font name, variant directories, and all available characters. Normalises `fill="#000000"` to `fill="currentColor"` so CSS `color` controls glyph colour.
+
+#### `createFont(fontData)` → `FontInstance`
+
+Wraps `FontData` in a convenient object:
+
+```js
+{
+  meta: { fontName, dirs, availableChars },
+  render(text, options) { /* → svgString */ }
+}
+```
+
+#### `render(text, fontDataOrInstance, options)` → `string`
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `size` | `number` | `120` | Width & height in px of each stacked unit |
+| `letterSpacing` | `number` | `8` | Gap in px between units |
+| `fill` | `string\|null` | `null` | CSS colour applied via `color` attribute (uses `currentColor`) |
+| `caseSensitive` | `boolean` | `false` | If `false`, falls back to the other case when a character is missing |
+
+Returns a self-contained `<svg>` string with only the used symbols embedded in `<defs>`.

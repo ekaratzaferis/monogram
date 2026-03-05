@@ -47,10 +47,14 @@ export function parseFontSvg(svgString) {
   const prefixes = symbols.map(s => s.id.replace(/-[^-]+$/, ''));
   const uniquePrefixes = [...new Set(prefixes)];
 
-  // Find longest common prefix among all deduplicated prefixes
+  // Find longest common prefix among all deduplicated prefixes.
+  // For multiple dirs the LCP stops exactly at the fontName/dir boundary (e.g. "MyFont" from
+  // "MyFontLeft" / "MyFontRight"). For a single dir the LCP equals the whole prefix so we
+  // strip the trailing CamelCase word that represents the dir (e.g. "Left" from "MyFontLeft").
+  const lcp = longestCommonPrefix(uniquePrefixes);
   const fontName = uniquePrefixes.length === 1
-    ? uniquePrefixes[0].replace(/[A-Z][a-z]+$/, '') // strip trailing CamelWord (the dir part)
-    : longestCommonPrefix(uniquePrefixes).replace(/([A-Z][^A-Z]*)$/, ''); // trim partial trailing word
+    ? lcp.replace(/[A-Z][a-z]*$/, '') // strip trailing CamelWord (the dir part)
+    : lcp;
 
   // Extract dirs (insertion-ordered, deduplicated)
   const dirs = [];
@@ -91,6 +95,7 @@ export function parseFontSvg(svgString) {
  */
 export function createFont(fontData) {
   return {
+    fontData,
     meta: {
       fontName: fontData.fontName,
       dirs: fontData.dirs,
@@ -117,9 +122,7 @@ export function render(text, fontDataOrInstance, options = {}) {
   // Accept either FontData or FontInstance
   const fontData = fontDataOrInstance.chars
     ? fontDataOrInstance
-    : fontDataOrInstance.meta && fontDataOrInstance.render
-      ? null // can't unwrap FontInstance here easily; require FontData
-      : fontDataOrInstance;
+    : fontDataOrInstance.fontData; // FontInstance exposes .fontData
 
   const {
     size = 120,
@@ -140,7 +143,6 @@ export function render(text, fontDataOrInstance, options = {}) {
   const usedSymbolIds = new Set();
   const groups = [];
 
-  let x = 0;
   let unitCount = 0;
 
   for (const chunk of chunks) {
@@ -168,32 +170,9 @@ export function render(text, fontDataOrInstance, options = {}) {
       uses.push(`<use href="#${symbolId}" width="${size}" height="${size}"/>`);
     }
 
-    // Skip entirely empty units (all chars missing, not just spaces)
-    const allMissing = chunk.split('').every(c => {
-      if (c === ' ') return false; // space occupies a slot, don't skip
-      return true; // will check below
-    });
-
-    // Check if all non-space chars are missing
-    const hasContent = chunk.split('').some((c, j) => {
-      if (c === ' ') return false;
-      const dir = dirs[j];
-      if (!dir) return false;
-      let charData = chars[c];
-      if (!charData && !caseSensitive) {
-        const folded = c === c.toUpperCase() ? c.toLowerCase() : c.toUpperCase();
-        charData = chars[folded];
-      }
-      return !!(charData && charData[dir]);
-    });
-
-    // A chunk with only spaces still advances position
-    const hasAnyNonSpace = chunk.split('').some(c => c !== ' ');
-
-    if (hasAnyNonSpace && !hasContent) {
-      // All non-space chars are missing — skip this unit entirely
-      continue;
-    }
+    // Skip units where every non-space char is missing from the font
+    const hasNonSpace = chunk.split('').some(c => c !== ' ');
+    if (hasNonSpace && uses.length === 0) continue;
 
     const translateX = unitCount * (size + letterSpacing);
     groups.push(`  <g transform="translate(${translateX}, 0)">\n    ${uses.join('\n    ')}\n  </g>`);

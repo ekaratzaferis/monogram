@@ -106,8 +106,8 @@ def main():
     h2 {{ margin-top: 2rem; color: #666; font-size: 1rem; text-transform: uppercase; letter-spacing: .05em; }}
 
     /* All-symbols grid */
-    .grid {{ display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem; }}
-    .card {{ background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 6px; text-align: center; }}
+    .grid {{ display: flex; flex-wrap: nowrap; gap: 10px; margin-bottom: 1rem; overflow-x: auto; padding-bottom: 6px; }}
+    .card {{ background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 6px; text-align: center; flex-shrink: 0; }}
     .card span {{ display: block; font-size: 11px; color: #888; margin-top: 2px; }}
 
     /* Typer */
@@ -117,7 +117,8 @@ def main():
       border-radius: 6px; width: 100%; max-width: 500px; outline: none;
     }}
     #typer input:focus {{ border-color: #888; }}
-    #render {{ margin-top: 1.5rem; min-height: 80px; }}
+    #render {{ margin-top: 1.5rem; height: 200px; }}
+    #render svg {{ height: 100%; width: auto; display: block; }}
   </style>
 </head>
 <body>
